@@ -3,15 +3,28 @@ require "../pty"
 class Pty::CaptureProcessOutput
   getter pty = Pty.new
 
-  def run(cmd : String, args = nil, *, width = nil, height = nil)
+  # Run with a pipe as input.  Make sure to close the pipe or `cmd` may not exit
+  #
+  # See `Process#new` for a description of parameters
+  def run(cmd : String, args = nil, *, shell : Bool = false, width = nil, height = nil)
+    IO.pipe do |rpipe, wpipe|
+      run(cmd, args, input: rpipe, shell: shell, width: width, height: height) do |process, _, outputerr|
+        yield process, wpipe, outputerr
+      end
+    end
+  end
+
+  # Run with the specified input.  Make sure to close `input` or `cmd` may not exit
+  #
+  # See `Process#new` for a description of parameters
+  def run(cmd : String, args = nil, *, input : IO::FileDescriptor, shell : Bool = false, width = nil, height = nil)
     # TODO: eat master data
     # TODO: set width,height
-    IO.pipe do |rp, wp|
-      process = Process.new(cmd, args, input: rp, output: @pty.slave, error: @pty.slave)
+      process = Process.new(cmd, args, input: input, output: @pty.slave, error: @pty.slave, shell: shell)
       status = nil
       begin
         r = begin
-          yield process, wp, @pty.master
+          yield process, input, @pty.master
         rescue ex
           process.signal Signal::TERM
           raise ex
@@ -20,6 +33,5 @@ class Pty::CaptureProcessOutput
         end
         {r, status.not_nil!}
       end
-    end
   end
 end
