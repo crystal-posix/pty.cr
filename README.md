@@ -1,4 +1,8 @@
 # pty.cr
+[![Crystal CI](https://github.com/crystal-posix/pty.cr/actions/workflows/crystal.yml/badge.svg)](https://github.com/crystal-posix/pty.cr/actions/workflows/crystal.yml)
+[![GitHub release](https://img.shields.io/github/release/crystal-posix/pty.cr.svg)](https://github.com/crystal-posix/pty.cr/releases)
+![GitHub commits since latest release (by date) for a branch](https://img.shields.io/github/commits-since/crystal-posix/pty.cr/latest)
+[![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://crystal-posix.github.io/pty.cr/main)
 
 Pty control and utility classes to capture command output.
 
