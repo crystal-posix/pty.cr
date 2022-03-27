@@ -25,7 +25,8 @@ describe Pty do
     Pty.open do |pty|
       pty.master.puts "foo"
       spawn do
-        pty.slave.tcdrain # Must drain before close or buffer is discarded
+        pty.master.tcdrain # Not sure if this will fix spurious error
+        pty.slave.tcdrain  # Must drain before close or buffer is discarded
         pty.master.close
       end
       pty.slave.gets.should eq "foo"

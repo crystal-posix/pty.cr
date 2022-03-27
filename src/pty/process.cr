@@ -1,5 +1,6 @@
 require "../pty"
 
+# Wrap `::Process.run` with a pipe for stdin and `Pty` for stdout/stderr
 class Pty::Process
   getter pty = Pty.new
 
@@ -20,7 +21,6 @@ class Pty::Process
   def run(cmd : String, args = nil, *, input : IO::FileDescriptor, shell : Bool = false, width = nil, height = nil)
     # TODO: set width,height
     pty.open do
-      #    Pty.open do |pty|
       process = ::Process.new(cmd, args, input: input, output: pty.slave, error: pty.slave, shell: shell)
       pty.slave.close # Remains open in `process`
       status = nil
