@@ -18,20 +18,23 @@ class Pty::CaptureProcessOutput
   #
   # See `Process#new` for a description of parameters
   def run(cmd : String, args = nil, *, input : IO::FileDescriptor, shell : Bool = false, width = nil, height = nil)
-    # TODO: eat master data
     # TODO: set width,height
-      process = Process.new(cmd, args, input: input, output: @pty.slave, error: @pty.slave, shell: shell)
+    pty.open do
+      #    Pty.open do |pty|
+      process = Process.new(cmd, args, input: input, output: pty.slave, error: pty.slave, shell: shell)
+      pty.slave.close # Remains open in `process`
       status = nil
       begin
         r = begin
-          yield process, input, @pty.master
+          yield process, input, pty.master
         rescue ex
-          process.signal Signal::TERM
+          process.signal(Signal::TERM) rescue nil
           raise ex
         ensure
           status = process.wait
         end
         {r, status.not_nil!}
       end
+    end
   end
 end

@@ -19,4 +19,10 @@ class IO::FileDescriptor
 
     args
   end
+
+  # blocking
+  def tcdrain : Nil
+    r = Pty::C.tcdrain fd
+    raise Error.from_errno("tcdrain") unless r == 0
+  end
 end

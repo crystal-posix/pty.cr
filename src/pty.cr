@@ -1,4 +1,5 @@
 require "./pty/file_descriptor"
+require "./pty/io"
 
 class Pty
   class Error < Exception
@@ -7,7 +8,7 @@ class Pty
 
   private PTS_NAME_MUTEX = Mutex.new
 
-  @@tty_io : IO::FileDescriptor?
+  @@tty_io : ::IO::FileDescriptor?
   @@tty_io_set = false
 
   def self.tty_io
@@ -24,10 +25,15 @@ class Pty
     @[Link("util")]
   {% end %}
   lib C
+    TCIOFLUSH = 2 # Linux
+
     fun openpty(amaster : LibC::Int*, aslave : LibC::Int*, name : LibC::Char*, termp : LibC::Termios*, winsize : LibC::Winsize*) : LibC::Int
     fun login_tty(int : LibC::Int) : LibC::Int
     fun grantpt(int : LibC::Int) : LibC::Int
     fun ptsname(fd : LibC::Int) : LibC::Char* # Not thread safe
+
+    fun tcdrain(fd : LibC::Int) : LibC::Int
+    fun tcflush(fd : LibC::Int, qs : LibC::Int) : LibC::Int
   end
 
   def self.open(width = nil, height = nil)
@@ -35,8 +41,8 @@ class Pty
     yield pty ensure pty.close
   end
 
-  getter master : IO::FileDescriptor
-  getter slave : IO::FileDescriptor
+  getter master : Pty::IO
+  getter slave : Pty::IO
 
   def initialize(width = nil, height = nil)
     tio = self.class.tty_io
@@ -48,8 +54,14 @@ class Pty
     r = C.openpty(out amaster, out aslave, nil, tio ? pointerof(term) : Pointer(LibC::Termios).null, nil)
     raise Error.from_errno("openpty") unless r == 0
 
-    @master = IO::FileDescriptor.new amaster
-    @slave = IO::FileDescriptor.new aslave
+    @master = Pty::IO.new amaster
+    @slave = Pty::IO.new aslave
+    @master.sync = true
+    @slave.sync = true
+    @master.close_on_exec = true
+    @slave.close_on_exec = true
+    @master.blocking = false
+    @slave.blocking = false
 
     if width && height
       @slave.win_size = {width, height}
@@ -58,6 +70,18 @@ class Pty
     elsif tio
       @slave.win_size = tio.win_size
     end
+  end
+
+  def open
+    @master.tcflush
+
+    if @slave.closed?
+      @slave = Pty::IO.new(ptsname)
+    else
+      @slave.tcflush
+    end
+
+    yield
   end
 
   def login_tty!
