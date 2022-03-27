@@ -26,10 +26,10 @@ Inspired from [crpty](https://github.com/federicotdn/crpty).
 
 ### Capture output from a command preserving colors & window width/height
 ```crystal
-require "pty/capture_process_output"
+require "pty/process"
 
-cpo = Pty::CaptureProcessOutput.new
-rvalue, process_status = cpo.run("cat", ["-"]) do |process, stdin, stdouterr|
+ptyp = Pty::Process.new
+rvalue, process_status = ptyp.run("cat", ["-"]) do |process, stdin, stdouterr|
   spawn do # Must run in another Fiber to avoid blocking if reading from `stdouterr`
     File.open("input") { |f| IO.copy(f, stdin) }
   ensure

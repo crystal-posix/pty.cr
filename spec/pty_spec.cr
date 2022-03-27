@@ -1,5 +1,5 @@
 require "./spec_helper"
-require "../src/pty/capture_process_output"
+require "../src/pty/process"
 
 Signal::TTIN.trap { p "TTIN" }
 
@@ -56,11 +56,11 @@ describe Pty do
   end
 end
 
-describe Pty::CaptureProcessOutput do
+describe Pty::Process do
   it "run (x2)" do
-    cpo = Pty::CaptureProcessOutput.new
+    ptyp = Pty::Process.new
     2.times do # Make sure master is reusable
-      r, status = cpo.run("cat", ["-"]) do |_, wp, master|
+      r, status = ptyp.run("cat", ["-"]) do |_, wp, master|
         wp.puts "foo"
         wp.close
         master.gets.should eq("foo")
@@ -69,14 +69,14 @@ describe Pty::CaptureProcessOutput do
       r.should eq(:return_value)
 
       # test discarding junk from prior `run`'s
-      cpo.pty.master.puts "bar"
+      ptyp.pty.master.puts "bar"
     end
   end
 
   it "IO.copy" do
-    cpo = Pty::CaptureProcessOutput.new
+    ptyp = Pty::Process.new
     mio = IO::Memory.new
-    r, status = cpo.run("echo", ["-n", "foo"]) do |_, wp, master|
+    r, status = ptyp.run("echo", ["-n", "foo"]) do |_, wp, master|
       wp.close
       IO.copy master, mio
       mio.to_s.should eq("foo")
