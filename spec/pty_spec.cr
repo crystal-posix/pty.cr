@@ -21,7 +21,8 @@ describe Pty do
     end
   end
 
-  it "close master" do
+  # Not sure if this is useful
+  pending "close master" do
     Pty.open do |pty|
       pty.master.puts "foo"
       spawn do

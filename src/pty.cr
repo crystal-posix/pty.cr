@@ -11,13 +11,21 @@ class Pty
   @@tty_io : ::IO::FileDescriptor?
   @@tty_io_set = false
 
-  def self.tty_io
+  private MUTEX = Mutex.new
+
+  def self.tty_win_size
+    tty_io.try &.win_size
+  end
+
+  protected def self.tty_io
     return @@tty_io if @@tty_io_set
-    @@tty_io = nil
-    @@tty_io = STDIN if STDIN.tty?
-    @@tty_io = STDOUT if STDOUT.tty?
-    @@tty_io = STDERR if STDERR.tty?
-    @@tty_io_set = true
+    MUTEX.synchronize do
+      @@tty_io ||= STDIN if STDIN.tty?
+      @@tty_io ||= STDOUT if STDOUT.tty?
+      @@tty_io ||= STDERR if STDERR.tty?
+      @@tty_io ||= File.new("/dev/tty")
+      @@tty_io_set = true
+    end
     @@tty_io
   end
 

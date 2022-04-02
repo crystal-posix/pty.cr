@@ -53,7 +53,6 @@ require "pty"
 
 pty = Pty.new
 pty.master.puts "foo"
-pty.master.flush
 pty.slave.gets => "foo"
 
 pty.slave.win_size = {40, 80}
