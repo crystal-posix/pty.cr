@@ -13,7 +13,11 @@ class Pty
 
   private MUTEX = Mutex.new
 
-  def self.tty_win_size
+  def self.tty_win_size : IO::FileDescriptor::WinSizeArg
+    tty_win_size? || raise "no controlling tty"
+  end
+
+  def self.tty_win_size?
     tty_io.try &.win_size
   end
 
@@ -23,7 +27,7 @@ class Pty
       @@tty_io ||= STDIN if STDIN.tty?
       @@tty_io ||= STDOUT if STDOUT.tty?
       @@tty_io ||= STDERR if STDERR.tty?
-      @@tty_io ||= File.new("/dev/tty")
+      @@tty_io ||= File.new("/dev/tty") rescue nil
       @@tty_io_set = true
     end
     @@tty_io

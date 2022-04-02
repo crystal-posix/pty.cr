@@ -56,6 +56,10 @@ describe Pty do
       pty.slave.read(Bytes.new(1)).should eq 0
     end
   end
+
+  it "tty_win_size" do
+    Pty.tty_win_size
+  end
 end
 
 describe Pty::Process do
